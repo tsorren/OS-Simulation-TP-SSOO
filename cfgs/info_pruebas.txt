@@ -1,0 +1,151 @@
+CORTO PLAZO:
+    MAX CPUs:   2
+    MAX IOs:    2
+    Archivo:    PLANI_CORTO_PLAZO
+    Tamaño:     0
+
+    Etapas:
+        1. FIFO con 2 CPUs y 1 IO, luego levantar otra IO
+        2. SJF con 1 CPU y 1 IO
+        3. SRT con 1 CPU y 1 IO
+
+    Resultados Esperados:
+        FIFO: 
+            - Los procesos que no son infinitos terminan sin problemas y los infinitos finalizan luego de matar la IO Disco
+            - Cuando se utilizan dos IO Disco se debe verificar que dos procesos ejecutan su IO en paralelo
+        SJF:
+            - Se ejecutan los procesos cortos primero
+            - El tiempo de espera promedio del proceso corto es más bajo que el resto
+        SRT:
+            - Se ejecutan los procesos cortos primero, incluyendo desalojo
+            - El tiempo de espera promedio expresado en las métricas es el más bajo que en SJF
+
+    Comandos Útiles:
+        FIFO: ./cfgs/set.sh p_corto_plazo 1 1 1 && ./scripts/m_exec.sh PLANI_CORTO_PLAZO 0 2 1
+    
+        SJF: ./cfgs/set.sh p_corto_plazo 2 1 1 && ./scripts/exec.sh PLANI_CORTO_PLAZO 0
+
+        SRT: ./cfgs/set.sh p_corto_plazo 3 1 1 && ./scripts/exec.sh PLANI_CORTO_PLAZO 0
+
+        IO EXTRA: ./cfgs/set.sh p_corto_plazo 1 1 2 && go run ./io DISCO
+
+===============================================================================
+
+MEDIANO/LARGO PLAZO:
+    MAX CPUs:   1
+    MAX IOs:    1
+    Archivo:    PLANI_LYM_PLAZO
+    Tamaño:     0
+
+    Etapas:
+        1. Iniciar módulos con algoritmo FIFO
+        2. Esperar finalización con normalidad
+        3. Cambiar algoritmo de ingreso a ready a PMCP y volver a ejecutar
+
+    Resultados Esperados:
+        - Los procesos finalizan con normalidad
+        - Todos los procesos PLANI_LYM_IO deben ser suspendidos 
+        - Lo que se encuentra en la memoria de dicho proceso debe ser enviado a SWAP
+        - Para PMCP el último proceso en ingresar a NEW (READY) debe ser el que solicita 256 de memoria
+
+    Comandos Útiles:
+        ./cfgs/set.sh p_mediano_largo_plazo 1 1 1 && ./scripts/exec.sh PLANI_LYM_PLAZO 0
+
+        grep "Pasa del estado BLOCKED al estado SUSP_BLOCKED" kernel/kernel.log
+
+        ./cfgs/set.sh p_mediano_largo_plazo 2 1 1 && ./scripts/exec.sh PLANI_LYM_PLAZO 0
+
+        grep "Pasa del estado NEW al estado READY" kernel/kernel.log 
+
+===============================================================================
+
+MEMORIA SWAP:
+    MAX CPUs:   1
+    MAX IOs:    1
+    Archivo:    MEMORIA_IO
+    Tamaño:     90
+
+    Etapas:
+        1. Iniciar los módulos
+        2. Esperar a que el proceso finalice
+
+    Resultados Esperados:
+        - Se puede observar el contenido de la memoria en los archivos de DUMP
+        - Se puede observar el contenido en el archivo de SWAP
+        - En ambos casos los valores son consistentes
+
+    Comandos Útiles:
+        ./cfgs/set.sh p_memoria_swap 1 1 1 && ./scripts/exec.sh MEMORIA_IO 90
+        
+        hexdump -C ~/dump_files/* && hexdump -C ~/swapfile.bin
+
+===============================================================================
+
+MEMORIA - CACHÉ:
+    MAX CPUs:   1 (con 2 configuraciones)
+    MAX IOs:    1
+    Archivo:    MEMORIA_BASE
+    Tamaño:     256
+
+    Etapas:
+        1. Iniciar módulos con algoritmo de reemplazo CLOCK
+        2. Esperar a que el proceso finalice
+        3. Cambiar el algoritmo de reemplazo de caché a CLOCK-M
+        4. Volver a lanzar la prueba y esperar que termine
+
+    Resultados Esperados:
+        - Los reemplazos de caché se realizan de acuerdo a los algoritmos definidos
+        - Se puede observar la diferencia entre algoritmos CLOCK y CLOCK-M
+
+    Comandos Útiles:
+        ./cfgs/set.sh p_memoria_cache 1 1 1 && ./scripts/exec.sh MEMORIA_BASE 256
+
+        grep -E "Cache (Miss|Add|Hit)|Memory Update.*Página" cpu/cpu.log | grep -v "OBTENER MARCO"
+
+        ./cfgs/set.sh p_memoria_cache 1 2 1 && ./scripts/exec.sh MEMORIA_BASE 256
+
+===============================================================================
+
+MEMORIA - TLB:
+    MAX CPUs:   1 (con 2 configuraciones)
+    MAX IOs:    1
+    Archivo:    MEMORIA_BASE
+    Tamaño:     256
+
+    Etapas:
+        1. Iniciar módulos con algoritmo de reemplazo FIFO
+        2. Esperar a que el proceso finalice
+        3. Cambiar el algoritmo de reemplazo de TLB a LRU
+        4. Volver a lanzar la prueba y esperar que termine
+
+    Resultados Esperados:
+        - Los reemplazos de TLB se dan de acuerdo a los algoritmos definidos
+        - Se puede observar la diferencia entre algoritmos FIFO y LRU
+
+    Comandos Útiles:
+        ./cfgs/set.sh p_memoria_tlb 1 1 1 && ./scripts/exec.sh MEMORIA_BASE 256
+        
+        grep -E "TLB (MISS|HIT)" cpu/cpu.log | grep -E "Pagina: [0-9]*" --color
+
+        ./cfgs/set.sh p_memoria_tlb 1 2 1 && ./scripts/exec.sh MEMORIA_BASE 256
+
+===============================================================================
+
+ESTABILIDAD GENERAL:
+    MAX CPUs:   4
+    MAX IOs:    4
+    Archivo:    ESTABILIDAD_GENERAL
+    Tamaño:     0
+
+    Etapas:
+        1. Iniciar todos los módulos con máxima configuración
+        2. Dejar correr todo por un buen tiempo (observar comportamiento)
+
+    Resultados Esperados:
+        - No se observan esperas activas
+        - No hay memory leaks
+        - El sistema no finaliza de manera abrupta
+        - Funcionamiento estable con alta carga
+
+    Comandos Útiles:
+        ./cfgs/set.sh p_estabilidad_general 1 1 1 && ./scripts/m_exec.sh ESTABILIDAD_GENERAL 0 4 4

@@ -1,0 +1,102 @@
+
+COMANDOS ÚTILES:
+
+=== CONFIGURACIÓN ===
+
+    Actualizar IPs (LABORATORIO):
+        ./cfgs/ip_update.sh
+        - Configura IPs de memoria y kernel en todas las configuraciones
+        - OBLIGATORIO antes de ejecutar en laboratorio
+        - Solicita las IPs de las PCs donde corren memoria y kernel
+
+    Actualización completa:
+        ./cfgs/full_update.sh
+        - Actualiza todas las configuraciones (IPs y puertos)
+        - Útil si cambias puertos o necesitas reconfigurar todo
+
+    Configurar prueba:
+        ./cfgs/set.sh p_[nombre_prueba] [num_kernel] [num_cpu] [num_io]
+        - Copia las configuraciones de la prueba específica a los módulos
+        - Ejemplo: ./cfgs/set.sh p_corto_plazo 1 1 1
+
+    Toggle Debug:
+        ./cfgs/toggle_debug.sh
+        - Cambia nivel de logs entre DEBUG e INFO en todas las configuraciones
+        - Útil para activar/desactivar logs detallados
+
+=== EJECUCIÓN ===
+
+    Ejecutar con 1 CPU y 1 IO:
+        ./scripts/exec.sh [archivo] [tamaño]
+        - Inicia kernel con el archivo de pseudocódigo y tamaño especificados
+        - Ejemplo: ./scripts/exec.sh PLANI_CORTO_PLAZO 0
+
+    Ejecutar con múltiples CPU/IO:
+        ./scripts/m_exec.sh [archivo] [tamaño] [cpus] [ios]
+        - Similar a exec.sh pero permite especificar cantidad de CPUs e IOs
+        - Ejemplo: ./scripts/m_exec.sh PLANI_CORTO_PLAZO 0 2 2
+
+=== UTILIDADES ===
+
+    Limpiar logs:
+        ./scripts/limpiar_logs.sh
+        - Mueve logs actuales a old_logs/ con separadores de tiempo
+        - Borra logs actuales para nueva ejecución limpia
+
+    Borrar estructuras:
+        ./scripts/borrar_estructuras.sh
+        - Limpia archivos dump y swapfile
+        - Llama automáticamente a limpiar_logs.sh
+        - Útil para resetear completamente el sistema
+
+    Ver estructuras:
+        ./scripts/ver_estructuras.sh
+        - Muestra contenido hexadecimal de archivos dump y swapfile
+        - Útil para mostrar resultados en la entrega
+
+    Ver IP local:
+        ./scripts/ip_local.sh
+        - Muestra la IP que otras PCs deben usar para conectarse por LAN
+
+=== EJEMPLOS DE USO ===
+
+    Configuración básica:
+        ./cfgs/set.sh p_corto_plazo 1 1 1
+        ./cfgs/set.sh p_memoria_cache 1 2 1
+
+    Ejecución simple:
+        ./scripts/exec.sh MEMORIA_BASE 256
+        ./scripts/exec.sh PLANI_CORTO_PLAZO 0
+
+    Ejecución con múltiples recursos:
+        ./scripts/m_exec.sh PLANI_CORTO_PLAZO 0 2 2
+        ./scripts/m_exec.sh ESTABILIDAD_GENERAL 0 4 4
+
+    Limpieza completa:
+        ./scripts/borrar_estructuras.sh
+
+=== FLUJO PARA LABORATORIO ===
+
+    1. Cada PC clona el repo
+    2. Cada PC ejecuta: ./cfgs/ip_update.sh (con IPs de memoria y kernel)
+    3. Cada PC configura: ./cfgs/set.sh p_[prueba] [kernels] [cpus] [ios]
+    4. Cada PC ejecuta su módulo: go run ./[modulo] [parámetros]
+    5. Ver resultados con grep o ./scripts/ver_estructuras.sh
+
+    Ejemplo con 4 PCs:
+        PC1 (Memoria): ./cfgs/set.sh p_mediano_largo_plazo 1 1 1 && go run ./memoria
+        PC2 (Kernel):  ./cfgs/set.sh p_mediano_largo_plazo 1 1 1 && go run ./kernel PLANI_LYM_PLAZO 0
+        PC3 (CPU):     ./cfgs/set.sh p_mediano_largo_plazo 1 1 1 && go run ./io DISCO
+        PC4 (IO):      ./cfgs/set.sh p_mediano_largo_plazo 1 1 1 && go run ./cpu CPU_1
+
+=== COMANDOS PARA ENTREGA ===
+
+    Preparación:
+        ./scripts/borrar_estructuras.sh
+        ./cfgs/set.sh p_[prueba] [config]
+
+    Ejecución:
+        ./cfgs/set.sh [prueba] [kernel] [cpu] [io] && go run ./[modulo]
+
+    Mostrar resultados:
+        ./scripts/ver_estructuras.sh

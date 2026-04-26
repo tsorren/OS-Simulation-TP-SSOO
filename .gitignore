@@ -1,0 +1,5 @@
+# Log files
+*.log
+#carpeta de visual
+*.vscode
+bin/*

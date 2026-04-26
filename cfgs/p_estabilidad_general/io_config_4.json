@@ -1,0 +1,7 @@
+{
+    "ip_kernel": "127.0.0.1",
+    "port_kernel": 8001,
+    "port_io": 8103,
+    "log_id": "io_4.log",
+    "log_level": "INFO"
+}
