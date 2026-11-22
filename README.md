@@ -1,10 +1,6 @@
 # OS Simulator – Distributed Process & Memory Management
 
-Implementación de un entorno de simulación de Sistema Operativo distribuido, diseñado para gestionar concurrencia masiva, planificación de CPU (Schedulers) y administración de memoria mediante comunicación por sockets.
-
-![Golang](https://img.shields.io/badge/Golang-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![Distributed Systems](https://img.shields.io/badge/Distributed_Systems-8A2BE2?style=for-the-badge)
-![Concurrency](https://img.shields.io/badge/Concurrency-FF8C00?style=for-the-badge)
+Implementación de un entorno de simulación de Sistema Operativo distribuido, diseñado para gestionar concurrencia, planificación de CPU (Schedulers) y administración de memoria mediante comunicación HTTP entre módulos.
 
 ## 📑 Índice
 - [OS Simulator – Distributed Process \& Memory Management](#os-simulator--distributed-process--memory-management)
@@ -19,27 +15,27 @@ Implementación de un entorno de simulación de Sistema Operativo distribuido, d
 
 ## 🧠 El Problema y la Motivación
 
-Construir un sistema de baja latencia que simule las entrañas de un sistema operativo real implica enfrentarse a *race conditions*, bloqueos e inanición de procesos. El desafío principal de este proyecto radicaba en lograr que cuatro módulos totalmente independientes interactúen de forma sincronizada simulando ciclos de instrucción, paginación de memoria y ruteo de I/O, sin colisionar en recursos compartidos.
+Construir un simulador de las entrañas de un sistema operativo real implica enfrentarse a *race conditions*, bloqueos e inanición de procesos. El desafío principal de este proyecto radicaba en lograr que cuatro módulos totalmente independientes interactúen de forma sincronizada simulando ciclos de instrucción, paginación de memoria y ruteo de I/O, sin colisionar en recursos compartidos.
 
-Este sistema fue diseñado deliberadamente separando la lógica en microprocesos, obligando a resolver la serialización de datos a través de TCP y garantizando un alto grado de multiprogramación sin sacrificar el determinismo de la simulación.
+Este sistema fue diseñado deliberadamente separando la lógica en microprocesos, obligando a resolver la serialización de datos (JSON) sobre HTTP y a mantener un grado de multiprogramación alto sin perder el determinismo de la simulación.
 
 ## 🏗️ Tech Stack y Arquitectura
 
-*   ![Golang](https://img.shields.io/badge/-Golang-00ADD8?style=flat-square&logo=go&logoColor=white) **Golang:** Lenguaje base elegido por su modelo nativo de concurrencia. Goroutines y Channels resultan ideales para construir un Kernel altamente asíncrono y planificadores sin overhead excesivo.
-*   ![TCP Sockets](https://img.shields.io/badge/-TCP_Sockets-4CAF50?style=flat-square) **TCP Sockets Custom Protocol:** Implementación de un protocolo binario propio para el paso de mensajes (IPC) de forma bidireccional entre los cuatro módulos principales, eliminando el overhead de protocolos como HTTP.
-*   ![Architecture](https://img.shields.io/badge/-Microprocesos-0078D4?style=flat-square) **Arquitectura Desacoplada:** El ecosistema está segmentado en `Kernel` (orquestación), `CPU` (ejecución), `Memoria` (almacenamiento y paginación) e `I/O` (periféricos).
+*   **Golang:** Lenguaje base elegido por su modelo nativo de concurrencia. Goroutines y Channels resultan ideales para construir un Kernel asíncrono y planificadores.
+*   **Comunicación HTTP:** Cada módulo expone un servidor HTTP (`net/http`) y los cuatro módulos principales se comunican con peticiones GET y POST con cuerpo JSON.
+*   **Arquitectura Desacoplada:** El ecosistema está segmentado en `Kernel` (orquestación), `CPU` (ejecución), `Memoria` (almacenamiento y paginación) e `I/O` (periféricos).
 
 ## ⚡ Features Clave
 
 *   **Planificadores de CPU Avanzados (Schedulers):** El Kernel implementa dinámicamente algoritmos como FIFO, Shortest Job First (SJF) y Shortest Remaining Time (SRT) con evaluación de desalojo en tiempo real (preemption).
-*   **Concurrencia Segura por Diseño:** Toda la manipulación de estados de los procesos (NEW, READY, EXEC, BLOCKED) y estructuras compartidas está protegida rigurosamente utilizando primitivas de sincronización (`sync.Mutex`), eliminando las condiciones de carrera bajo cargas pesadas.
-*   **Memory Paging y Swapping:** Simulación del acceso a memoria de bajo nivel resolviendo direcciones lógicas a físicas e implementando políticas de reemplazo de páginas cuando el espacio físico colapsa.
-*   **Protocolo de Serialización Propio:** Diseño de un encoder/decoder custom para empaquetar estructuras y PCB's (Process Control Blocks) que viajan fluidamente a través de los sockets TCP entre la CPU y el Kernel.
+*   **Concurrencia Segura por Diseño:** Toda la manipulación de estados de los procesos (NEW, READY, EXEC, BLOCKED) y estructuras compartidas está protegida rigurosamente utilizando primitivas de sincronización (`sync.Mutex`), para evitar condiciones de carrera.
+*   **Memory Paging y Swapping:** Simulación del acceso a memoria de bajo nivel resolviendo direcciones lógicas a físicas con paginación jerárquica y un archivo de SWAP, e implementando algoritmos de reemplazo de páginas (por ejemplo, CLOCK) cuando el espacio físico se agota.
+*   **Serialización de Paquetes:** Empaquetado de estructuras y PCB's (Process Control Blocks) como JSON, que viajan por HTTP entre la CPU y el Kernel.
 
 ## 📈 Aprendizajes Clave y Roadmap
 
 *   **Gestión de Deadlocks y Mutexes:** Orquestar el desalojo de un proceso mediante una estimación (SRT) me enseñó los riesgos arquitectónicos de anidar *locks*. Resolví *deadlocks* latentes modificando el diseño a colas de channels asíncronos y reduciendo la granularidad de los semáforos.
-*   **IPC Performat:** Optimizar la decodificación de mensajes TCP me permitió comprender profundamente cómo la serialización ineficiente afecta directamente el rendimiento del despachador de la CPU.
+*   **IPC performante:** Optimizar la decodificación de mensajes HTTP/JSON me permitió comprender profundamente cómo la serialización ineficiente afecta directamente el rendimiento del despachador de la CPU.
 
 ## 🖼️ Visuales y Diagramas de Impacto
 
@@ -62,14 +58,14 @@ graph TD
         IO_N["fa:fa-hdd Interfaz I/O N..."]
     end
 
-    Kernel <-->|TCP / Dispatch| CPU1
-    Kernel <-->|TCP / Dispatch| CPU_N
-    Kernel <-->|TCP / Handshake| Memoria
-    Kernel <-->|TCP / IPC| IO1
-    Kernel <-->|TCP / IPC| IO_N
+    Kernel <-->|HTTP / Dispatch| CPU1
+    Kernel <-->|HTTP / Dispatch| CPU_N
+    Kernel <-->|HTTP / Handshake| Memoria
+    Kernel <-->|HTTP / IPC| IO1
+    Kernel <-->|HTTP / IPC| IO_N
     
-    CPU1 <-->|TCP / MMU requests| Memoria
-    CPU_N <-->|TCP / MMU requests| Memoria
+    CPU1 <-->|HTTP / MMU requests| Memoria
+    CPU_N <-->|HTTP / MMU requests| Memoria
 
     style Kernel fill:#2C3E50,stroke:#fff,color:#fff
     style CPU1 fill:#005C84,stroke:#fff,color:#fff
