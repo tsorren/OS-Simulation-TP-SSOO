@@ -29,7 +29,7 @@ Este sistema fue diseñado deliberadamente separando la lógica en microprocesos
 
 *   **Planificadores de CPU Avanzados (Schedulers):** El Kernel implementa dinámicamente algoritmos como FIFO, Shortest Job First (SJF) y Shortest Remaining Time (SRT) con evaluación de desalojo en tiempo real (preemption).
 *   **Concurrencia Segura por Diseño:** Toda la manipulación de estados de los procesos (NEW, READY, EXEC, BLOCKED) y estructuras compartidas está protegida rigurosamente utilizando primitivas de sincronización (`sync.Mutex`), para evitar condiciones de carrera.
-*   **Memory Paging y Swapping:** Simulación del acceso a memoria de bajo nivel resolviendo direcciones lógicas a físicas con paginación jerárquica y un archivo de SWAP por proceso, y una caché de páginas en la CPU con reemplazo CLOCK o CLOCK-M y un TLB con reemplazo FIFO o LRU, configurables.
+*   **Memory Paging y Swapping:** Simulación del acceso a memoria de bajo nivel resolviendo direcciones lógicas a físicas con paginación jerárquica y un archivo de SWAP, y una caché de páginas en la CPU con reemplazo CLOCK o CLOCK-M y un TLB con reemplazo FIFO o LRU, configurables.
 *   **Serialización de Paquetes:** Empaquetado de estructuras y PCB's (Process Control Blocks) como JSON, que viajan por HTTP entre la CPU y el Kernel.
 
 ## 📈 Aprendizajes Clave y Roadmap
